@@ -64,5 +64,3 @@ async fn close_cleanly() {
 
     assert!(result.is_none() || matches!(result, Some(Ok(Message::Close(_)))));
 }
-
-
