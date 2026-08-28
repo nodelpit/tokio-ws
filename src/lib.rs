@@ -2,6 +2,8 @@ use ::tokio_tungstenite::{accept_async, tungstenite::Message};
 use futures_util::{SinkExt, StreamExt};
 use tokio::net::TcpListener;
 
+mod protocol;
+
 pub async fn run(listener: TcpListener) {
     loop {
         let (stream, _addr) = match listener.accept().await {
