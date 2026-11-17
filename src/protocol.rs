@@ -4,16 +4,16 @@ use serde::{Deserialize, Serialize};
 #[derive(Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ClientMessage {
-    Join { salon: String },
-    Leave { salon: String },
-    SendMessage { salon: String, text: String },
+    Join { room: String },
+    Leave { room: String },
+    SendMessage { room: String, text: String },
 }
 
 #[allow(dead_code)]
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ServerMessage {
-    Message { salon: String, text: String },
+    Message { room: String, text: String },
     Error { message: String },
 }
 
@@ -25,14 +25,14 @@ mod tests {
     fn deserialize_join_message() {
         let json = r#"{
             "type": "join",
-            "salon": "general"
+            "room": "general"
         }"#;
 
         let message: ClientMessage = serde_json::from_str(json).unwrap();
 
         assert!(matches!(
             message,
-            ClientMessage::Join { salon } if salon == "general"
+            ClientMessage::Join { room } if room == "general"
         ))
     }
 
@@ -40,14 +40,14 @@ mod tests {
     fn deserialize_leave_message() {
         let json = r#"{
             "type": "leave",
-            "salon": "general"
+            "room": "general"
         }"#;
 
         let message: ClientMessage = serde_json::from_str(json).unwrap();
 
         assert!(matches!(
             message,
-            ClientMessage::Leave { salon } if salon == "general"
+            ClientMessage::Leave { room } if room == "general"
         ))
     }
 
@@ -55,7 +55,7 @@ mod tests {
     fn deserialize_send_message() {
         let json = r#"{
             "type": "send_message",
-            "salon": "general",
+            "room": "general",
             "text": "hi world"
         }"#;
 
@@ -63,14 +63,14 @@ mod tests {
 
         assert!(matches!(
             message,
-            ClientMessage::SendMessage { salon, text } if salon == "general" && text == "hi world"
+            ClientMessage::SendMessage { room, text } if room == "general" && text == "hi world"
         ))
     }
 
     #[test]
     fn serialize_message() {
         let message = ServerMessage::Message {
-            salon: "general".into(),
+            room: "general".into(),
             text: "hi world".into(),
         };
 
@@ -82,8 +82,27 @@ mod tests {
             json_value,
             serde_json::json!({
                 "type": "message",
-                "salon": "general",
+                "room": "general",
                 "text": "hi world",
+            })
+        );
+    }
+
+    #[test]
+    fn serialize_error() {
+        let message = ServerMessage::Error {
+            message: "error message".into(),
+        };
+
+        let json_string = serde_json::to_string(&message).unwrap();
+
+        let json_value: serde_json::Value = serde_json::from_str(&json_string).unwrap();
+
+        assert_eq!(
+            json_value,
+            serde_json::json!({
+                "type": "error",
+                "message": "error message",
             })
         );
     }
@@ -91,7 +110,7 @@ mod tests {
     #[test]
     fn roundtrip_message() {
         let message = ServerMessage::Message {
-            salon: "general".into(),
+            room: "general".into(),
             text: "hi world".into(),
         };
 
@@ -109,7 +128,7 @@ mod tests {
 
         let unknown_type = r#"{
             "type": "unknown",
-            "salon": "general"
+            "room": "general"
         }"#;
         assert!(serde_json::from_str::<ClientMessage>(unknown_type).is_err());
 
