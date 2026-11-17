@@ -2,7 +2,11 @@ use ::tokio_tungstenite::{accept_async, tungstenite::Message};
 use futures_util::{SinkExt, StreamExt};
 use tokio::net::TcpListener;
 
+#[cfg_attr(not(test), expect(dead_code, reason = "câblé en T4"))]
 mod protocol;
+
+#[cfg_attr(not(test), expect(dead_code, reason = "câblé en T4"))]
+mod rooms;
 
 pub async fn run(listener: TcpListener) {
     loop {
