@@ -1,16 +1,14 @@
 use serde::{Deserialize, Serialize};
 
-#[allow(dead_code)]
-#[derive(Deserialize)]
-#[serde(tag = "type", rename_all = "snake_case")]
+#[derive(Deserialize, Debug)]
+#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 pub enum ClientMessage {
     Join { room: String },
     Leave { room: String },
     SendMessage { room: String, text: String },
 }
 
-#[allow(dead_code)]
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ServerMessage {
     Message { room: String, text: String },
@@ -122,19 +120,28 @@ mod tests {
     }
 
     #[test]
-    fn reject_malformed_message() {
-        let invalid_json = "not json";
-        assert!(serde_json::from_str::<ClientMessage>(invalid_json).is_err());
+    fn reject_invalid_json() {
+        let result = serde_json::from_str::<ClientMessage>("not json");
+        assert!(result.unwrap_err().is_syntax());
+    }
 
-        let unknown_type = r#"{
-            "type": "unknown",
-            "room": "general"
-        }"#;
-        assert!(serde_json::from_str::<ClientMessage>(unknown_type).is_err());
+    #[test]
+    fn reject_unknown_type() {
+        let result =
+            serde_json::from_str::<ClientMessage>(r#"{"type":"unknown","room":"general"}"#);
+        assert!(result.unwrap_err().is_data());
+    }
 
-        let missing_field = r#"{
-            "type": "join"
-        }"#;
-        assert!(serde_json::from_str::<ClientMessage>(missing_field).is_err());
+    #[test]
+    fn reject_missing_field() {
+        let result = serde_json::from_str::<ClientMessage>(r#"{"type":"join"}"#);
+        assert!(result.unwrap_err().is_data());
+    }
+
+    #[test]
+    fn deny_unknown_fields() {
+        let result =
+            serde_json::from_str::<ClientMessage>(r#"{"type":"join","room":"general","extra":1}"#);
+        assert!(result.unwrap_err().is_data());
     }
 }
